@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NLP Machine Learning - Translator & Document Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .stats {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 15px;
+            background: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .tab-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .tab-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        textarea, input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus, input[type="text"]:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .result-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .result-box h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .document-result {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #764ba2;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .document-result h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+        
+        .document-result .meta {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .similarity-score {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .error {
+            background: #fee;
+            border-left-color: #f44336;
+            color: #c33;
+        }
+        
+        .success {
+            background: #efe;
+            border-left-color: #4caf50;
+            color: #2a5;
+        }
+        
+        .upload-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f0f4ff;
+            border-radius: 8px;
+            border: 2px dashed #667eea;
+        }
+        
+        input[type="file"] {
+            margin-top: 10px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 NLP Machine Learning</h1>
+            <p>Language Translator & Document Search System</p>
+        </header>
+        
+        <div class="stats" id="stats">
+            <strong>📊 Thống kê:</strong> Đang tải...
+        </div>
+        
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('translator')">
+                🌐 Dịch ngôn ngữ
+            </button>
+            <button class="tab-button" onclick="switchTab('search')">
+                🔍 Tìm kiếm tài liệu
+            </button>
+            <button class="tab-button" onclick="switchTab('upload')">
+                📤 Upload CSV
+            </button>
+        </div>
+        
+        <!-- Tab Dịch ngôn ngữ -->
+        <div id="translator" class="tab-content active">
+            <h2>🌐 Dịch ngôn ngữ</h2>
+            <p style="color: #666; margin-bottom: 20px;">Nhập văn bản và chọn ngôn ngữ đích để dịch</p>
+            
+            <div class="form-group">
+                <label for="sourceText">Văn bản gốc:</label>
+                <textarea id="sourceText" placeholder="Nhập văn bản cần dịch..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="targetLang">Dịch sang:</label>
+                <select id="targetLang">
+                    <option value="vi">Tiếng Việt</option>
+                    <option value="en">English</option>
+                    <option value="zh-cn">中文 (Chinese)</option>
+                    <option value="ja">日本語 (Japanese)</option>
+                    <option value="ko">한국어 (Korean)</option>
+                    <option value="fr">Français (French)</option>
+                    <option value="de">Deutsch (German)</option>
+                    <option value="es">Español (Spanish)</option>
+                </select>
+            </div>
+            
+            <button onclick="translateText()">Dịch ngay</button>
+            
+            <div class="loading" id="translateLoading">
+                <div class="spinner"></div>
+                <p>Đang dịch...</p>
+            </div>
+            
+            <div id="translateResult"></div>
+        </div>
+        
+        <!-- Tab Tìm kiếm tài liệu -->
+        <div id="search" class="tab-content">
+            <h2>🔍 Tìm kiếm tài liệu</h2>
+            <p style="color: #666; margin-bottom: 20px;">Tìm kiếm trong kho tài liệu CSV bằng NLP</p>
+            
+            <div class="form-group">
+                <label for="searchQuery">Truy vấn tìm kiếm:</label>
+                <input type="text" id="searchQuery" placeholder="VD: machine learning, python programming...">
+            </div>
+            
+            <div class="form-group">
+                <label for="topK">Số kết quả:</label>
+                <select id="topK">
+                    <option value="3">3 kết quả</option>
+                    <option value="5" selected>5 kết quả</option>
+                    <option value="10">10 kết quả</option>
+                </select>
+            </div>
+            
+            <button onclick="searchDocuments()">Tìm kiếm</button>
+            
+            <div class="loading" id="searchLoading">
+                <div class="spinner"></div>
+                <p>Đang tìm kiếm...</p>
+            </div>
+            
+            <div id="searchResult"></div>
+        </div>
+        
+        <!-- Tab Upload CSV -->
+        <div id="upload" class="tab-content">
+            <h2>📤 Upload File CSV</h2>
+            <p style="color: #666; margin-bottom: 20px;">Tải lên file CSV mới chứa tài liệu</p>
+            
+            <div class="upload-section">
+                <h3>📋 Định dạng CSV yêu cầu:</h3>
+                <p style="margin: 10px 0;">File CSV phải có các cột sau:</p>
+                <ul style="margin-left: 20px;">
+                    <li><strong>id</strong>: ID category</li>
+                    <li><strong>title</strong>: Title of database</li>
+                    <li><strong>content</strong>: Database content (Mandatory)</li>
+                    <li><strong>category</strong>: List (Optional)</li>
+                </ul>
+                
+                <div style="margin-top: 20px;">
+                    <label for="csvFile"><strong>Choose a CSV:</strong></label>
+                    <input type="file" id="csvFile" accept=".csv">
+                    <button onclick="uploadCSV()" style="margin-top: 10px;">Upload</button>
+                </div>
+            </div>
+            
+            <div class="loading" id="uploadLoading">
+                <div class="spinner"></div>
+                <p>Đang tải lên...</p>
+            </div>
+            
+            <div id="uploadResult"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Chuyển tab
+        function switchTab(tabName) {
+            // Ẩn tất cả tab content
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Bỏ active khỏi tất cả button
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Hiện tab được chọn
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        // Dịch văn bản
+        async function translateText() {
+            const text = document.getElementById('sourceText').value;
+            const targetLang = document.getElementById('targetLang').value;
+            const resultDiv = document.getElementById('translateResult');
+            const loading = document.getElementById('translateLoading');
+            
+            if (!text.trim()) {
+                resultDiv.innerHTML = '<div class="result-box error">Vui lòng nhập văn bản cần dịch!</div>';
+                return;
+            }
+            
+            loading.classList.add('active');
+            resultDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch('/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, target_lang: targetLang })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result-box success">
+                            <h3>✅ Kết quả dịch:</h3>
+                            <p><strong>Ngôn ngữ nguồn:</strong> ${data.source_lang}</p>
+                            <p><strong>Ngôn ngữ đích:</strong> ${data.target_lang}</p>
+                            <hr style="margin: 15px 0;">
+                            <p><strong>Văn bản gốc:</strong></p>
+                            <p style="background: #f0f0f0; padding: 10px; border-radius: 5px;">${data.original}</p>
+                            <p><strong>Bản dịch:</strong></p>
+                            <p style="background: #e3f2fd; padding: 10px; border-radius: 5px; font-weight: bold;">${data.translated}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="result-box error">❌ ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result-box error">❌ Lỗi: ${error.message}</div>`;
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+        
+        // Tìm kiếm tài liệu
+        async function searchDocuments() {
+            const query = document.getElementById('searchQuery').value;
+            const topK = parseInt(document.getElementById('topK').value);
+            const resultDiv = document.getElementById('searchResult');
+            const loading = document.getElementById('searchLoading');
+            
+            if (!query.trim()) {
+                resultDiv.innerHTML = '<div class="result-box error">Vui lòng nhập truy vấn tìm kiếm!</div>';
+                return;
+            }
+            
+            loading.classList.add('active');
+            resultDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, top_k: topK })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.results.length === 0) {
+                        resultDiv.innerHTML = '<div class="result-box">Không tìm thấy kết quả phù hợp.</div>';
+                    } else {
+                        let html = `<div class="result-box success">
+                            <h3>🎯 Tìm thấy ${data.total_found} kết quả cho: "${data.query}"</h3>
+                        </div>`;
+                        
+                        data.results.forEach((doc, index) => {
+                            html += `
+                                <div class="document-result">
+                                    <h4>${index + 1}. ${doc.title}</h4>
+                                    <div class="meta">
+                                        <span class="similarity-score">Độ tương đồng: ${(doc.similarity * 100).toFixed(1)}%</span>
+                                        | Category: ${doc.category}
+                                    </div>
+                                    <p>${doc.content}</p>
+                                </div>
+                            `;
+                        });
+                        
+                        resultDiv.innerHTML = html;
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="result-box error">❌ ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result-box error">❌ Lỗi: ${error.message}</div>`;
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+        
+        // Upload CSV
+        async function uploadCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            const resultDiv = document.getElementById('uploadResult');
+            const loading = document.getElementById('uploadLoading');
+            
+            if (!file) {
+                resultDiv.innerHTML = '<div class="result-box error">Vui lòng chọn file CSV!</div>';
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            loading.classList.add('active');
+            resultDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch('/upload_csv', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result-box success">
+                            <h3>✅ ${data.message}</h3>
+                            <p>Tổng số tài liệu: ${data.documents_count}</p>
+                        </div>
+                    `;
+                    loadStats(); // Cập nhật thống kê
+                } else {
+                    resultDiv.innerHTML = `<div class="result-box error">❌ ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result-box error">❌ Lỗi: ${error.message}</div>`;
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+        
+        // Tải thống kê
+        async function loadStats() {
+            try {
+                const response = await fetch('/stats');
+                const data = await response.json();
+                
+                const statsDiv = document.getElementById('stats');
+                if (data.loaded) {
+                    statsDiv.innerHTML = `
+                        <strong>📊 Thống kê:</strong> 
+                        Đã tải <strong>${data.total_documents}</strong> tài liệu | 
+                        Cột: ${data.columns.join(', ')}
+                    `;
+                } else {
+                    statsDiv.innerHTML = '<strong>📊 Thống kê:</strong> Chưa tải dữ liệu';
+                }
+            } catch (error) {
+                console.error('Lỗi tải thống kê:', error);
+            }
+        }
+        
+        // Tải thống kê khi trang load
+        window.onload = function() {
+            loadStats();
+        };
+        
+        // Thêm Enter key cho search
+        document.getElementById('searchQuery').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') searchDocuments();
+        });
+    </script>
+</body>
+</html>
